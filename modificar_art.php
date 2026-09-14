@@ -1,16 +1,20 @@
 <?php
+
 ob_start();
 
 require('../menu/menu.php');
 require('../Conexion.php');
 
+
 /*
- * ------------------------------------------------------------
- * HELPER FUNCTION
- * ------------------------------------------------------------
- * Escapes values before inserting them into HTML.
- * This protects against XSS when displaying database values.
- */
+|--------------------------------------------------------------------------
+| HELPER: HTML ESCAPING
+|--------------------------------------------------------------------------
+|
+| Prevents XSS when values from the database are inserted into HTML.
+|
+*/
+
 function e($value)
 {
     return htmlspecialchars(
@@ -22,26 +26,13 @@ function e($value)
 
 
 /*
- * ------------------------------------------------------------
- * GET MATERIAL ID
- * ------------------------------------------------------------
- *
- * Expected URL:
- *
- * modificar_material.php?ID_MATERIAL=3
- *
- */
+|--------------------------------------------------------------------------
+| GET / POST MATERIAL ID
+|--------------------------------------------------------------------------
+*/
 
-$ID_MATERIAL = filter_input(
-    INPUT_GET,
-    'ID_MATERIAL',
-    FILTER_VALIDATE_INT
-);
+$ID_MATERIAL = null;
 
-
-/*
- * If the form was submitted, the ID comes from POST.
- */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $ID_MATERIAL = filter_input(
@@ -50,28 +41,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         FILTER_VALIDATE_INT
     );
 
-    if ($ID_MATERIAL === false || $ID_MATERIAL === null || $ID_MATERIAL <= 0) {
-        die('ID_MATERIAL inválido.');
-    }
+} else {
+
+    $ID_MATERIAL = filter_input(
+        INPUT_GET,
+        'ID_MATERIAL',
+        FILTER_VALIDATE_INT
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| VALIDATE MATERIAL ID
+|--------------------------------------------------------------------------
+*/
+
+if (
+    $ID_MATERIAL === false ||
+    $ID_MATERIAL === null ||
+    $ID_MATERIAL <= 0
+) {
+
+    die(
+        'ID_MATERIAL no especificado o inválido.<br><br>' .
+        'Ejemplo:<br>' .
+        'modificar_art.php?ID_MATERIAL=1'
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| PROCESS FORM
+|--------------------------------------------------------------------------
+*/
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
     /*
-     * --------------------------------------------------------
-     * READ POST DATA
-     * --------------------------------------------------------
-     */
+    |--------------------------------------------------------------------------
+    | READ FORM VALUES
+    |--------------------------------------------------------------------------
+    */
 
-    $NOMBRE_MATERIAL = trim($_POST['NOMBRE_MATERIAL'] ?? '');
+    $NOMBRE_MATERIAL = trim(
+        $_POST['NOMBRE_MATERIAL'] ?? ''
+    );
+
     $STOCK = filter_input(
         INPUT_POST,
         'STOCK',
         FILTER_VALIDATE_INT
     );
 
-    $SKU = trim($_POST['SKU'] ?? '');
-    $FECHA_CADUCIDAD = trim($_POST['FECHA_CADUCIDAD'] ?? '');
+    $SKU = trim(
+        $_POST['SKU'] ?? ''
+    );
 
-    $TUA = trim($_POST['TUA'] ?? '');
+    $FECHA_CADUCIDAD = trim(
+        $_POST['FECHA_CADUCIDAD'] ?? ''
+    );
+
+    $TUA = trim(
+        $_POST['TUA'] ?? ''
+    );
 
     $PATA = filter_input(
         INPUT_POST,
@@ -79,7 +114,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         FILTER_VALIDATE_INT
     );
 
-    $FECHA_REGISTRO = trim($_POST['FECHA_REGISTRO'] ?? '');
+    $FECHA_REGISTRO = trim(
+        $_POST['FECHA_REGISTRO'] ?? ''
+    );
 
     $ID_CATEGORIA = filter_input(
         INPUT_POST,
@@ -101,78 +138,113 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
     /*
-     * --------------------------------------------------------
-     * VALIDATION
-     * --------------------------------------------------------
-     */
+    |--------------------------------------------------------------------------
+    | VALIDATION
+    |--------------------------------------------------------------------------
+    */
 
     $errors = [];
 
 
-    // NOMBRE_MATERIAL
+    /*
+    | NOMBRE_MATERIAL
+    */
+
     if ($NOMBRE_MATERIAL === '') {
 
-        $errors[] = 'El nombre del material es obligatorio.';
+        $errors[] =
+            'El nombre del material es obligatorio.';
 
     } elseif (mb_strlen($NOMBRE_MATERIAL) > 100) {
 
-        $errors[] = 'El nombre del material no puede superar 100 caracteres.';
-    }
-
-
-    // STOCK
-    if ($STOCK === false || $STOCK === null || $STOCK < 0) {
-
-        $errors[] = 'El stock debe ser un número entero mayor o igual a 0.';
-    }
-
-
-    // SKU
-    if ($SKU === '') {
-
-        $errors[] = 'El SKU es obligatorio.';
-
-    } elseif (mb_strlen($SKU) > 30) {
-
-        $errors[] = 'El SKU no puede superar 30 caracteres.';
-    }
-
-
-    // FECHA_CADUCIDAD
-    if ($FECHA_CADUCIDAD !== '' && mb_strlen($FECHA_CADUCIDAD) > 255) {
-
-        $errors[] = 'La fecha de caducidad es demasiado larga.';
-    }
-
-
-    // TUA
-    if ($TUA !== '') {
-
-        if (!is_numeric($TUA)) {
-
-            $errors[] = 'TUA debe ser un número válido.';
-
-        } elseif ((float)$TUA < 0) {
-
-            $errors[] = 'TUA no puede ser negativo.';
-
-        } elseif (strlen($TUA) > 10) {
-
-            $errors[] = 'TUA tiene un formato demasiado largo.';
-        }
-    }
-
-
-    // PATA
-    if ($PATA === false || $PATA === null || $PATA < 0) {
-
-        $errors[] = 'PATA debe ser un número entero mayor o igual a 0.';
+        $errors[] =
+            'El nombre del material no puede superar 100 caracteres.';
     }
 
 
     /*
-     * Validate date if supplied.
-     */
+    | STOCK
+    */
+
+    if (
+        $STOCK === false ||
+        $STOCK === null ||
+        $STOCK < 0
+    ) {
+
+        $errors[] =
+            'STOCK debe ser un número entero mayor o igual a 0.';
+    }
+
+
+    /*
+    | SKU
+    */
+
+    if ($SKU === '') {
+
+        $errors[] =
+            'El SKU es obligatorio.';
+
+    } elseif (mb_strlen($SKU) > 30) {
+
+        $errors[] =
+            'El SKU no puede superar 30 caracteres.';
+    }
+
+
+    /*
+    | FECHA_CADUCIDAD
+    |
+    | Your database defines this column as TEXT.
+    | Therefore we treat it as text.
+    */
+
+    if (mb_strlen($FECHA_CADUCIDAD) > 255) {
+
+        $errors[] =
+            'FECHA_CADUCIDAD no puede superar 255 caracteres.';
+    }
+
+
+    /*
+    | TUA
+    */
+
+    if ($TUA !== '') {
+
+        if (!is_numeric($TUA)) {
+
+            $errors[] =
+                'TUA debe ser un número válido.';
+
+        } elseif ((float)$TUA < 0) {
+
+            $errors[] =
+                'TUA no puede ser negativo.';
+        }
+    }
+
+
+    /*
+    | PATA
+    */
+
+    if (
+        $PATA === false ||
+        $PATA === null ||
+        $PATA < 0
+    ) {
+
+        $errors[] =
+            'PATA debe ser un número entero mayor o igual a 0.';
+    }
+
+
+    /*
+    | FECHA_REGISTRO
+    */
+
     if ($FECHA_REGISTRO !== '') {
 
         $date = DateTime::createFromFormat(
@@ -185,54 +257,190 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $date->format('Y-m-d') !== $FECHA_REGISTRO
         ) {
 
-            $errors[] = 'FECHA_REGISTRO debe tener formato YYYY-MM-DD.';
+            $errors[] =
+                'FECHA_REGISTRO debe tener formato YYYY-MM-DD.';
         }
     }
 
 
-    // CATEGORY
+    /*
+    | CATEGORY
+    |
+    | Category can be NULL because the database allows NULL.
+    */
+
     if (
-        $ID_CATEGORIA !== null &&
         $ID_CATEGORIA !== false &&
+        $ID_CATEGORIA !== null &&
         $ID_CATEGORIA <= 0
     ) {
 
-        $errors[] = 'ID_CATEGORIA inválido.';
+        $errors[] =
+            'ID_CATEGORIA inválido.';
     }
 
 
-    // PROVIDER
+    /*
+    | PROVIDER
+    |
+    | Provider can also be NULL.
+    */
+
     if (
-        $ID_PRO !== null &&
         $ID_PRO !== false &&
+        $ID_PRO !== null &&
         $ID_PRO <= 0
     ) {
 
-        $errors[] = 'ID_PRO inválido.';
+        $errors[] =
+            'ID_PRO inválido.';
     }
 
 
-    // UNIT OF MEASURE
+    /*
+    | UNIT OF MEASURE
+    |
+    | ID_UM is NOT NULL in the database.
+    */
+
     if (
         $ID_UM === false ||
         $ID_UM === null ||
         $ID_UM <= 0
     ) {
 
-        $errors[] = 'Debe seleccionar una unidad de medida.';
+        $errors[] =
+            'Debe seleccionar una unidad de medida.';
     }
 
 
     /*
-     * --------------------------------------------------------
-     * IF VALIDATION FAILED
-     * --------------------------------------------------------
-     */
+    |--------------------------------------------------------------------------
+    | CHECK THAT FOREIGN KEYS ACTUALLY EXIST
+    |--------------------------------------------------------------------------
+    */
+
+
+    /*
+    | Check CATEGORY
+    */
+
+    if (
+        $ID_CATEGORIA !== false &&
+        $ID_CATEGORIA !== null
+    ) {
+
+        $stmt = mysqli_prepare(
+            $Conexion,
+            'SELECT ID_CATEGORIA
+             FROM categoria
+             WHERE ID_CATEGORIA = ?'
+        );
+
+        mysqli_stmt_bind_param(
+            $stmt,
+            'i',
+            $ID_CATEGORIA
+        );
+
+        mysqli_stmt_execute($stmt);
+
+        mysqli_stmt_store_result($stmt);
+
+        if (mysqli_stmt_num_rows($stmt) === 0) {
+
+            $errors[] =
+                'La categoría seleccionada no existe.';
+        }
+
+        mysqli_stmt_close($stmt);
+    }
+
+
+    /*
+    | Check PROVIDER
+    */
+
+    if (
+        $ID_PRO !== false &&
+        $ID_PRO !== null
+    ) {
+
+        $stmt = mysqli_prepare(
+            $Conexion,
+            'SELECT ID_PRO
+             FROM proveedor
+             WHERE ID_PRO = ?'
+        );
+
+        mysqli_stmt_bind_param(
+            $stmt,
+            'i',
+            $ID_PRO
+        );
+
+        mysqli_stmt_execute($stmt);
+
+        mysqli_stmt_store_result($stmt);
+
+        if (mysqli_stmt_num_rows($stmt) === 0) {
+
+            $errors[] =
+                'El proveedor seleccionado no existe.';
+        }
+
+        mysqli_stmt_close($stmt);
+    }
+
+
+    /*
+    | Check UNIT
+    */
+
+    if (
+        $ID_UM !== false &&
+        $ID_UM !== null
+    ) {
+
+        $stmt = mysqli_prepare(
+            $Conexion,
+            'SELECT ID_UM
+             FROM unidad_m
+             WHERE ID_UM = ?'
+        );
+
+        mysqli_stmt_bind_param(
+            $stmt,
+            'i',
+            $ID_UM
+        );
+
+        mysqli_stmt_execute($stmt);
+
+        mysqli_stmt_store_result($stmt);
+
+        if (mysqli_stmt_num_rows($stmt) === 0) {
+
+            $errors[] =
+                'La unidad de medida seleccionada no existe.';
+        }
+
+        mysqli_stmt_close($stmt);
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | SHOW VALIDATION ERRORS
+    |--------------------------------------------------------------------------
+    */
 
     if (!empty($errors)) {
 
+        echo '<div class="container mt-3">';
         echo '<div class="alert alert-danger">';
-        echo '<strong>Error:</strong><ul>';
+        echo '<strong>Se encontraron errores:</strong>';
+        echo '<ul>';
 
         foreach ($errors as $error) {
 
@@ -241,150 +449,129 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         echo '</ul>';
         echo '</div>';
-
-        ob_end_flush();
-        exit;
-    }
-
-
-    /*
-     * --------------------------------------------------------
-     * UPDATE MATERIAL
-     * --------------------------------------------------------
-     *
-     * IMPORTANT:
-     *
-     * Prepared statements prevent SQL injection.
-     */
-
-    $SQL = "
-        UPDATE material
-        SET
-            NOMBRE_MATERIAL = ?,
-            STOCK = ?,
-            SKU = ?,
-            FECHA_CADUCIDAD = ?,
-            TUA = NULLIF(?, ''),
-            PATA = ?,
-            FECHA_REGISTRO = NULLIF(?, ''),
-            ID_CATEGORIA = ?,
-            ID_PRO = ?,
-            ID_UM = ?
-        WHERE ID_MATERIAL = ?
-    ";
-
-
-    $stmt = mysqli_prepare($Conexion, $SQL);
-
-    if (!$stmt) {
-
-        die(
-            'Error preparando la consulta: ' .
-            e(mysqli_error($Conexion))
-        );
-    }
-
-
-    /*
-     * Bind parameters.
-     *
-     * s = string
-     * i = integer
-     *
-     * Parameters:
-     *
-     * NOMBRE_MATERIAL  s
-     * STOCK            i
-     * SKU              s
-     * FECHA_CADUCIDAD  s
-     * TUA              s
-     * PATA             i
-     * FECHA_REGISTRO   s
-     * ID_CATEGORIA     i
-     * ID_PRO           i
-     * ID_UM            i
-     * ID_MATERIAL      i
-     */
-
-    mysqli_stmt_bind_param(
-        $stmt,
-        'sisssisiiii',
-        $NOMBRE_MATERIAL,
-        $STOCK,
-        $SKU,
-        $FECHA_CADUCIDAD,
-        $TUA,
-        $PATA,
-        $FECHA_REGISTRO,
-        $ID_CATEGORIA,
-        $ID_PRO,
-        $ID_UM,
-        $ID_MATERIAL
-    );
-
-
-    /*
-     * Execute UPDATE
-     */
-
-    if (!mysqli_stmt_execute($stmt)) {
+        echo '</div>';
 
         /*
-         * Error 1062 = duplicate value for UNIQUE SKU.
+         * Do not execute UPDATE.
          */
+    } else {
 
-        if (mysqli_stmt_errno($stmt) === 1062) {
 
-            die('Error: el SKU ya existe.');
+        /*
+        |--------------------------------------------------------------------------
+        | UPDATE MATERIAL
+        |--------------------------------------------------------------------------
+        |
+        | Prepared statement protects against SQL injection.
+        |
+        */
 
-        } else {
+        $SQL = "
+            UPDATE material
+            SET
+                NOMBRE_MATERIAL = ?,
+                STOCK = ?,
+                SKU = ?,
+                FECHA_CADUCIDAD = NULLIF(?, ''),
+                TUA = NULLIF(?, ''),
+                PATA = ?,
+                FECHA_REGISTRO = NULLIF(?, ''),
+                ID_CATEGORIA = ?,
+                ID_PRO = ?,
+                ID_UM = ?
+            WHERE ID_MATERIAL = ?
+        ";
+
+
+        $stmt = mysqli_prepare(
+            $Conexion,
+            $SQL
+        );
+
+
+        if (!$stmt) {
 
             die(
-                'Error actualizando el material: ' .
+                'Error preparando UPDATE: ' .
+                e(mysqli_error($Conexion))
+            );
+        }
+
+
+        /*
+        | Parameter types:
+        |
+        | s = string
+        | i = integer
+        |
+        */
+
+        mysqli_stmt_bind_param(
+            $stmt,
+            'sisssisiiii',
+            $NOMBRE_MATERIAL,
+            $STOCK,
+            $SKU,
+            $FECHA_CADUCIDAD,
+            $TUA,
+            $PATA,
+            $FECHA_REGISTRO,
+            $ID_CATEGORIA,
+            $ID_PRO,
+            $ID_UM,
+            $ID_MATERIAL
+        );
+
+
+        /*
+        | Execute UPDATE
+        */
+
+        if (!mysqli_stmt_execute($stmt)) {
+
+
+            /*
+            | MySQL error 1062 = duplicate SKU.
+            */
+
+            if (mysqli_stmt_errno($stmt) === 1062) {
+
+                die(
+                    'Error: el SKU "' .
+                    e($SKU) .
+                    '" ya existe.'
+                );
+            }
+
+
+            die(
+                'Error actualizando material: ' .
                 e(mysqli_stmt_error($stmt))
             );
         }
+
+
+        mysqli_stmt_close($stmt);
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | REDIRECT
+        |--------------------------------------------------------------------------
+        */
+
+        header('Location: material.php');
+
+        exit;
     }
-
-
-    mysqli_stmt_close($stmt);
-
-
-    /*
-     * Redirect after successful update.
-     */
-
-    header('Location: material.php');
-    exit;
 }
 
 
 /*
- * ------------------------------------------------------------
- * VALIDATE GET ID
- * ------------------------------------------------------------
- */
-
-if (
-    $ID_MATERIAL === false ||
-    $ID_MATERIAL === null ||
-    $ID_MATERIAL <= 0
-) {
-
-    die(
-        'ID_MATERIAL no especificado o inválido.<br>' .
-        'Ejemplo: modificar_material.php?ID_MATERIAL=3'
-    );
-}
-
-
-/*
- * ------------------------------------------------------------
- * GET MATERIAL FROM DATABASE
- * ------------------------------------------------------------
- *
- * Prepared statement prevents SQL injection.
- */
+|--------------------------------------------------------------------------
+| GET MATERIAL
+|--------------------------------------------------------------------------
+*/
 
 $SQL = "
     SELECT
@@ -405,7 +592,11 @@ $SQL = "
 ";
 
 
-$stmt = mysqli_prepare($Conexion, $SQL);
+$stmt = mysqli_prepare(
+    $Conexion,
+    $SQL
+);
+
 
 if (!$stmt) {
 
@@ -428,6 +619,7 @@ mysqli_stmt_execute($stmt);
 
 $result = mysqli_stmt_get_result($stmt);
 
+
 $Registro = mysqli_fetch_assoc($result);
 
 
@@ -435,36 +627,60 @@ mysqli_stmt_close($stmt);
 
 
 /*
- * Material does not exist.
- */
+|--------------------------------------------------------------------------
+| MATERIAL NOT FOUND
+|--------------------------------------------------------------------------
+*/
 
 if (!$Registro) {
 
     die(
-        'No existe un material con ID_MATERIAL = ' .
+        'No existe el material con ID_MATERIAL = ' .
         e($ID_MATERIAL)
     );
 }
 
 
 /*
- * ------------------------------------------------------------
- * ASSIGN DATABASE VALUES
- * ------------------------------------------------------------
- */
+|--------------------------------------------------------------------------
+| DATABASE VALUES
+|--------------------------------------------------------------------------
+*/
 
-$ID_MATERIAL      = $Registro['ID_MATERIAL'];
-$NOMBRE_MATERIAL  = $Registro['NOMBRE_MATERIAL'];
-$STOCK            = $Registro['STOCK'];
-$SKU              = $Registro['SKU'];
-$FECHA_CADUCIDAD  = $Registro['FECHA_CADUCIDAD'];
-$TUA              = $Registro['TUA'];
-$PATA             = $Registro['PATA'];
-$FECHA_REGISTRO   = $Registro['FECHA_REGISTRO'];
-$FOTO             = $Registro['FOTO'];
-$ID_CATEGORIA     = $Registro['ID_CATEGORIA'];
-$ID_PRO            = $Registro['ID_PRO'];
-$ID_UM             = $Registro['ID_UM'];
+$ID_MATERIAL = $Registro['ID_MATERIAL'];
+
+$NOMBRE_MATERIAL =
+    $Registro['NOMBRE_MATERIAL'];
+
+$STOCK =
+    $Registro['STOCK'];
+
+$SKU =
+    $Registro['SKU'];
+
+$FECHA_CADUCIDAD =
+    $Registro['FECHA_CADUCIDAD'];
+
+$TUA =
+    $Registro['TUA'];
+
+$PATA =
+    $Registro['PATA'];
+
+$FECHA_REGISTRO =
+    $Registro['FECHA_REGISTRO'];
+
+$FOTO =
+    $Registro['FOTO'];
+
+$ID_CATEGORIA =
+    $Registro['ID_CATEGORIA'];
+
+$ID_PRO =
+    $Registro['ID_PRO'];
+
+$ID_UM =
+    $Registro['ID_UM'];
 
 ?>
 
@@ -477,12 +693,12 @@ $ID_UM             = $Registro['ID_UM'];
 ```
 <meta charset="utf-8">
 
-<title>Modificar Material</title>
-
 <meta
     name="viewport"
     content="width=device-width, initial-scale=1"
 >
+
+<title>Modificar Material</title>
 
 <link
     rel="stylesheet"
@@ -493,6 +709,8 @@ $ID_UM             = $Registro['ID_UM'];
 
     body {
         background-image: url('../Img/pencil.jpg');
+        background-size: cover;
+        background-attachment: fixed;
     }
 
     .titulo {
@@ -500,16 +718,18 @@ $ID_UM             = $Registro['ID_UM'];
         font-size: 40px;
         color: #000000;
         text-align: center;
+        margin: 30px 0;
     }
 
     .campo-label {
         font-weight: bold;
         font-size: 18px;
         color: #000000;
+        white-space: nowrap;
     }
 
     .form-container {
-        max-width: 900px;
+        max-width: 950px;
         margin: auto;
         padding: 20px;
     }
@@ -536,10 +756,11 @@ $ID_UM             = $Registro['ID_UM'];
     id="form1"
 >
 
-    <!--
-        Hidden ID.
 
-        This identifies the database record being modified.
+    <!--
+    --------------------------------------------------------
+    MATERIAL ID
+    --------------------------------------------------------
     -->
 
     <input
@@ -549,445 +770,590 @@ $ID_UM             = $Registro['ID_UM'];
     >
 
 
-    <table class="table table-secondary table-striped">
+    <div style="overflow-x:auto;">
 
-        <!-- NOMBRE -->
+        <table
+            class="table table-secondary table-striped"
+        >
 
-        <tr>
 
-            <td class="campo-label">
-                NOMBRE MATERIAL
-            </td>
+            <!--
+            ------------------------------------------------
+            NOMBRE MATERIAL
+            ------------------------------------------------
+            -->
 
-            <td>
+            <tr>
 
-                <input
-                    name="NOMBRE_MATERIAL"
-                    type="text"
-                    maxlength="100"
-                    class="form-control"
-                    id="NOMBRE_MATERIAL"
-                    value="<?= e($NOMBRE_MATERIAL) ?>"
-                    required
-                >
+                <td class="campo-label">
+                    NOMBRE MATERIAL
+                </td>
 
-            </td>
+                <td>
 
-        </tr>
+                    <input
+                        name="NOMBRE_MATERIAL"
+                        type="text"
+                        maxlength="100"
+                        class="form-control"
+                        id="NOMBRE_MATERIAL"
+                        value="<?= e($NOMBRE_MATERIAL) ?>"
+                        required
+                    >
 
+                </td>
 
-        <!-- STOCK -->
+            </tr>
 
-        <tr>
 
-            <td class="campo-label">
-                STOCK
-            </td>
+            <!--
+            ------------------------------------------------
+            STOCK
+            ------------------------------------------------
+            -->
 
-            <td>
+            <tr>
 
-                <input
-                    name="STOCK"
-                    type="number"
-                    class="form-control"
-                    min="0"
-                    max="2147483647"
-                    id="STOCK"
-                    value="<?= e($STOCK) ?>"
-                    required
-                >
+                <td class="campo-label">
+                    STOCK
+                </td>
 
-            </td>
+                <td>
 
-        </tr>
+                    <input
+                        name="STOCK"
+                        type="number"
+                        class="form-control"
+                        min="0"
+                        max="2147483647"
+                        id="STOCK"
+                        value="<?= e($STOCK) ?>"
+                        required
+                    >
 
+                </td>
 
-        <!-- SKU -->
+            </tr>
 
-        <tr>
 
-            <td class="campo-label">
-                SKU
-            </td>
+            <!--
+            ------------------------------------------------
+            SKU
+            ------------------------------------------------
+            -->
 
-            <td>
+            <tr>
 
-                <input
-                    name="SKU"
-                    type="text"
-                    maxlength="30"
-                    class="form-control"
-                    id="SKU"
-                    value="<?= e($SKU) ?>"
-                    required
-                >
+                <td class="campo-label">
+                    SKU
+                </td>
 
-            </td>
+                <td>
 
-        </tr>
+                    <input
+                        name="SKU"
+                        type="text"
+                        maxlength="30"
+                        class="form-control"
+                        id="SKU"
+                        value="<?= e($SKU) ?>"
+                        required
+                    >
 
+                </td>
 
-        <!-- FECHA CADUCIDAD -->
+            </tr>
 
-        <tr>
 
-            <td class="campo-label">
-                FECHA CADUCIDAD
-            </td>
+            <!--
+            ------------------------------------------------
+            FECHA CADUCIDAD
+            ------------------------------------------------
+            -->
 
-            <td>
+            <tr>
 
-                <input
-                    name="FECHA_CADUCIDAD"
-                    type="text"
-                    maxlength="255"
-                    class="form-control"
-                    id="FECHA_CADUCIDAD"
-                    value="<?= e($FECHA_CADUCIDAD) ?>"
-                    placeholder="Ej: 2027-12-31"
-                >
+                <td class="campo-label">
+                    FECHA CADUCIDAD
+                </td>
 
-            </td>
+                <td>
 
-        </tr>
+                    <input
+                        name="FECHA_CADUCIDAD"
+                        type="text"
+                        maxlength="255"
+                        class="form-control"
+                        id="FECHA_CADUCIDAD"
+                        value="<?= e($FECHA_CADUCIDAD) ?>"
+                        placeholder="Ej: 2027-12-31"
+                    >
 
+                </td>
 
-        <!-- TUA -->
+            </tr>
 
-        <tr>
 
-            <td class="campo-label">
-                TUA
-            </td>
+            <!--
+            ------------------------------------------------
+            TUA
+            ------------------------------------------------
+            -->
 
-            <td>
+            <tr>
 
-                <input
-                    name="TUA"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    class="form-control"
-                    id="TUA"
-                    value="<?= e($TUA) ?>"
-                >
+                <td class="campo-label">
+                    TUA
+                </td>
 
-            </td>
+                <td>
 
-        </tr>
+                    <input
+                        name="TUA"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max="99999999.99"
+                        class="form-control"
+                        id="TUA"
+                        value="<?= e($TUA) ?>"
+                    >
 
+                </td>
 
-        <!-- PATA -->
+            </tr>
 
-        <tr>
 
-            <td class="campo-label">
-                PATA
-            </td>
+            <!--
+            ------------------------------------------------
+            PATA
+            ------------------------------------------------
+            -->
 
-            <td>
+            <tr>
 
-                <input
-                    name="PATA"
-                    type="number"
-                    min="0"
-                    class="form-control"
-                    id="PATA"
-                    value="<?= e($PATA) ?>"
-                    required
-                >
+                <td class="campo-label">
+                    PATA
+                </td>
 
-            </td>
+                <td>
 
-        </tr>
+                    <input
+                        name="PATA"
+                        type="number"
+                        min="0"
+                        max="2147483647"
+                        class="form-control"
+                        id="PATA"
+                        value="<?= e($PATA) ?>"
+                        required
+                    >
 
+                </td>
 
-        <!-- FECHA REGISTRO -->
+            </tr>
 
-        <tr>
 
-            <td class="campo-label">
-                FECHA REGISTRO
-            </td>
+            <!--
+            ------------------------------------------------
+            FECHA REGISTRO
+            ------------------------------------------------
+            -->
 
-            <td>
+            <tr>
 
-                <input
-                    name="FECHA_REGISTRO"
-                    type="date"
-                    class="form-control"
-                    id="FECHA_REGISTRO"
-                    value="<?= e($FECHA_REGISTRO) ?>"
-                >
+                <td class="campo-label">
+                    FECHA REGISTRO
+                </td>
 
-            </td>
+                <td>
 
-        </tr>
+                    <input
+                        name="FECHA_REGISTRO"
+                        type="date"
+                        class="form-control"
+                        id="FECHA_REGISTRO"
+                        value="<?= e($FECHA_REGISTRO) ?>"
+                    >
 
+                </td>
 
-        <!-- FOTO -->
+            </tr>
 
-        <tr>
 
-            <td class="campo-label">
-                FOTO
-            </td>
+            <!--
+            ------------------------------------------------
+            FOTO
+            ------------------------------------------------
+            -->
 
-            <td>
+            <tr>
 
-                <input
-                    class="form-control"
-                    name="FOTO"
-                    id="FOTO"
-                    value="<?= e($FOTO) ?>"
-                    readonly
-                >
+                <td class="campo-label">
+                    FOTO
+                </td>
 
-            </td>
+                <td>
 
-        </tr>
+                    <input
+                        class="form-control"
+                        name="FOTO"
+                        id="FOTO"
+                        value="<?= e($FOTO) ?>"
+                        readonly
+                    >
 
+                </td>
 
-        <!-- CATEGORIA -->
+            </tr>
 
-        <tr>
 
-            <td class="campo-label">
-                CATEGORIA
-            </td>
+            <!--
+            =================================================
+            CATEGORY DROPDOWN
+            =================================================
+            -->
 
-            <td>
+            <tr>
 
-                <?php
+                <td class="campo-label">
+                    CATEGORÍA
+                </td>
 
-                $SQL_CATEGORIA = "
-                    SELECT
-                        ID_CATEGORIA,
-                        NOMBRE_CATEGORIA
-                    FROM categoria
-                    ORDER BY NOMBRE_CATEGORIA
-                ";
+                <td>
 
-                $RKO = mysqli_query(
-                    $Conexion,
-                    $SQL_CATEGORIA
-                );
+                    <?php
 
-                if (!$RKO) {
+                    /*
+                    | Correct column:
+                    |
+                    | categoria.NOMBRE_CAT
+                    */
 
-                    die(
-                        'Error cargando categorías: ' .
-                        e(mysqli_error($Conexion))
+                    $SQL_CATEGORIA = "
+                        SELECT
+                            ID_CATEGORIA,
+                            NOMBRE_CAT
+                        FROM categoria
+                        ORDER BY NOMBRE_CAT
+                    ";
+
+
+                    $RKO = mysqli_query(
+                        $Conexion,
+                        $SQL_CATEGORIA
                     );
-                }
 
-                ?>
 
-                <select
-                    class="form-control"
-                    name="ID_CATEGORIA"
-                    id="ID_CATEGORIA"
-                >
+                    if (!$RKO) {
 
-                    <option value="">
-                        -- Sin categoría --
-                    </option>
+                        die(
+                            'Error cargando categorías: ' .
+                            e(mysqli_error($Conexion))
+                        );
+                    }
 
-                    <?php while (
-                        $REY = mysqli_fetch_assoc($RKO)
-                    ) { ?>
+                    ?>
 
-                        <option
-                            value="<?= e($REY['ID_CATEGORIA']) ?>"
-                            <?= (
-                                (string)$ID_CATEGORIA ===
-                                (string)$REY['ID_CATEGORIA']
-                            ) ? 'selected' : '' ?>
-                        >
 
-                            <?= e($REY['NOMBRE_CATEGORIA']) ?>
+                    <select
+                        class="form-control"
+                        name="ID_CATEGORIA"
+                        id="ID_CATEGORIA"
+                    >
 
+                        <option value="">
+                            -- Sin categoría --
                         </option>
 
-                    <?php } ?>
 
-                </select>
-
-            </td>
-
-        </tr>
+                        <?php while (
+                            $REY =
+                            mysqli_fetch_assoc($RKO)
+                        ) { ?>
 
 
-        <!-- PROVEEDOR -->
+                            <option
+                                value="<?= e($REY['ID_CATEGORIA']) ?>"
+                                <?=
+                                    (
+                                        (string)$ID_CATEGORIA ===
+                                        (string)$REY['ID_CATEGORIA']
+                                    )
+                                    ? 'selected'
+                                    : ''
+                                ?>
+                            >
 
-        <tr>
+                                <?= e($REY['NOMBRE_CAT']) ?>
 
-            <td class="campo-label">
-                PROVEEDOR
-            </td>
+                            </option>
 
-            <td>
 
-                <?php
+                        <?php } ?>
 
-                $SQL_PROVEEDOR = "
-                    SELECT
-                        ID_PRO
-                    FROM proveedor
-                    ORDER BY ID_PRO
-                ";
 
-                $RPRO = mysqli_query(
-                    $Conexion,
-                    $SQL_PROVEEDOR
-                );
+                    </select>
 
-                if (!$RPRO) {
+                </td>
 
-                    die(
-                        'Error cargando proveedores: ' .
-                        e(mysqli_error($Conexion))
+            </tr>
+
+
+            <!--
+            =================================================
+            PROVIDER DROPDOWN
+            =================================================
+            -->
+
+            <tr>
+
+                <td class="campo-label">
+                    PROVEEDOR
+                </td>
+
+                <td>
+
+                    <?php
+
+                    /*
+                    | Correct columns:
+                    |
+                    | proveedor.ID_PRO
+                    | proveedor.NOMBRE_PRO
+                    */
+
+                    $SQL_PROVEEDOR = "
+                        SELECT
+                            ID_PRO,
+                            NOMBRE_PRO
+                        FROM proveedor
+                        ORDER BY NOMBRE_PRO
+                    ";
+
+
+                    $RPRO = mysqli_query(
+                        $Conexion,
+                        $SQL_PROVEEDOR
                     );
-                }
 
-                ?>
 
-                <select
-                    class="form-control"
-                    name="ID_PRO"
-                    id="ID_PRO"
-                >
+                    if (!$RPRO) {
 
-                    <option value="">
-                        -- Sin proveedor --
-                    </option>
+                        die(
+                            'Error cargando proveedores: ' .
+                            e(mysqli_error($Conexion))
+                        );
+                    }
 
-                    <?php while (
-                        $PRO = mysqli_fetch_assoc($RPRO)
-                    ) { ?>
+                    ?>
 
-                        <option
-                            value="<?= e($PRO['ID_PRO']) ?>"
-                            <?= (
-                                (string)$ID_PRO ===
-                                (string)$PRO['ID_PRO']
-                            ) ? 'selected' : '' ?>
-                        >
 
-                            <?= e($PRO['ID_PRO']) ?>
+                    <select
+                        class="form-control"
+                        name="ID_PRO"
+                        id="ID_PRO"
+                    >
 
+                        <option value="">
+                            -- Sin proveedor --
                         </option>
 
-                    <?php } ?>
 
-                </select>
-
-            </td>
-
-        </tr>
+                        <?php while (
+                            $PRO =
+                            mysqli_fetch_assoc($RPRO)
+                        ) { ?>
 
 
-        <!-- UNIDAD DE MEDIDA -->
+                            <option
+                                value="<?= e($PRO['ID_PRO']) ?>"
+                                <?=
+                                    (
+                                        (string)$ID_PRO ===
+                                        (string)$PRO['ID_PRO']
+                                    )
+                                    ? 'selected'
+                                    : ''
+                                ?>
+                            >
 
-        <tr>
+                                <?= e($PRO['NOMBRE_PRO']) ?>
 
-            <td class="campo-label">
-                UNIDAD DE MEDIDA
-            </td>
+                            </option>
 
-            <td>
 
-                <?php
+                        <?php } ?>
 
-                $SQL_UM = "
-                    SELECT
-                        ID_UM
-                    FROM unidad_m
-                    ORDER BY ID_UM
-                ";
 
-                $RUM = mysqli_query(
-                    $Conexion,
-                    $SQL_UM
-                );
+                    </select>
 
-                if (!$RUM) {
+                </td>
 
-                    die(
-                        'Error cargando unidades: ' .
-                        e(mysqli_error($Conexion))
+            </tr>
+
+
+            <!--
+            =================================================
+            UNIT OF MEASURE DROPDOWN
+            =================================================
+            -->
+
+            <tr>
+
+                <td class="campo-label">
+                    UNIDAD DE MEDIDA
+                </td>
+
+                <td>
+
+                    <?php
+
+                    /*
+                    | Correct columns:
+                    |
+                    | unidad_m.ID_UM
+                    | unidad_m.NOMBRE_UM
+                    | unidad_m.ABREVIATURA
+                    */
+
+                    $SQL_UM = "
+                        SELECT
+                            ID_UM,
+                            NOMBRE_UM,
+                            ABREVIATURA
+                        FROM unidad_m
+                        ORDER BY NOMBRE_UM
+                    ";
+
+
+                    $RUM = mysqli_query(
+                        $Conexion,
+                        $SQL_UM
                     );
-                }
 
-                ?>
 
-                <select
-                    class="form-control"
-                    name="ID_UM"
-                    id="ID_UM"
-                    required
-                >
+                    if (!$RUM) {
 
-                    <option value="">
-                        -- Seleccione unidad --
-                    </option>
+                        die(
+                            'Error cargando unidades de medida: ' .
+                            e(mysqli_error($Conexion))
+                        );
+                    }
 
-                    <?php while (
-                        $UM = mysqli_fetch_assoc($RUM)
-                    ) { ?>
+                    ?>
 
-                        <option
-                            value="<?= e($UM['ID_UM']) ?>"
-                            <?= (
-                                (string)$ID_UM ===
-                                (string)$UM['ID_UM']
-                            ) ? 'selected' : '' ?>
-                        >
 
-                            <?= e($UM['ID_UM']) ?>
+                    <select
+                        class="form-control"
+                        name="ID_UM"
+                        id="ID_UM"
+                        required
+                    >
 
+                        <option value="">
+                            -- Seleccione unidad --
                         </option>
 
-                    <?php } ?>
 
-                </select>
-
-            </td>
-
-        </tr>
+                        <?php while (
+                            $UM =
+                            mysqli_fetch_assoc($RUM)
+                        ) { ?>
 
 
-        <!-- BUTTON -->
+                            <option
+                                value="<?= e($UM['ID_UM']) ?>"
+                                <?=
+                                    (
+                                        (string)$ID_UM ===
+                                        (string)$UM['ID_UM']
+                                    )
+                                    ? 'selected'
+                                    : ''
+                                ?>
+                            >
 
-        <tr>
+                                <?= e($UM['NOMBRE_UM']) ?>
 
-            <td colspan="2" class="text-center">
+                                <?php
 
-                <button
-                    name="Modificar"
-                    type="submit"
-                    class="btn btn-dark"
+                                if (
+                                    !empty(
+                                        $UM['ABREVIATURA']
+                                    )
+                                ) {
+
+                                    echo ' (' .
+                                        e(
+                                            $UM['ABREVIATURA']
+                                        ) .
+                                        ')';
+                                }
+
+                                ?>
+
+                            </option>
+
+
+                        <?php } ?>
+
+
+                    </select>
+
+                </td>
+
+            </tr>
+
+
+            <!--
+            =================================================
+            BUTTONS
+            =================================================
+            -->
+
+            <tr>
+
+                <td
+                    colspan="2"
+                    class="text-center"
                 >
-                    Modificar
-                </button>
 
-                <a
-                    href="material.php"
-                    class="btn btn-secondary"
-                >
-                    Cancelar
-                </a>
+                    <button
+                        name="Modificar"
+                        type="submit"
+                        class="btn btn-dark"
+                    >
+                        Modificar
+                    </button>
 
-            </td>
 
-        </tr>
+                    <a
+                        href="material.php"
+                        class="btn btn-secondary"
+                    >
+                        Cancelar
+                    </a>
 
-    </table>
+                </td>
+
+            </tr>
+
+
+        </table>
+
+    </div>
 
 </form>
 ```
 
 </div>
+
+<!--
+|--------------------------------------------------------------------------
+| JAVASCRIPT
+|--------------------------------------------------------------------------
+-->
 
 <script src="../js/jquery-3.4.1.slim.min.js"></script>
 
@@ -997,63 +1363,79 @@ $ID_UM             = $Registro['ID_UM'];
 
 <script>
 
-    /*
-     * Convert material name to:
-     *
-     * "TORNILLO DE ACERO"
-     *
-     * →
-     *
-     * "Tornillo de acero"
-     */
+/*
+|--------------------------------------------------------------------------
+| MATERIAL NAME
+|--------------------------------------------------------------------------
+|
+| Converts:
+|
+|     TORNILLO DE ACERO
+|
+| into:
+|
+|     Tornillo de acero
+|
+*/
 
-    const nombreMaterial =
-        document.getElementById('NOMBRE_MATERIAL');
-
-    nombreMaterial.addEventListener(
-        'blur',
-        function () {
-
-            const texto = this.value
-                .trim()
-                .toLowerCase();
-
-            if (texto.length > 0) {
-
-                this.value =
-                    texto.charAt(0).toUpperCase() +
-                    texto.slice(1);
-            }
-        }
-    );
+const nombreMaterial =
+    document.getElementById('NOMBRE_MATERIAL');
 
 
-    /*
-     * Convert SKU to uppercase.
-     */
+nombreMaterial.addEventListener(
+    'blur',
+    function () {
 
-    const sku =
-        document.getElementById('SKU');
+        const texto =
+            this.value.trim().toLowerCase();
 
-    sku.addEventListener(
-        'input',
-        function () {
+
+        if (texto.length > 0) {
 
             this.value =
-                this.value.toUpperCase();
+                texto.charAt(0).toUpperCase() +
+                texto.slice(1);
         }
-    );
+
+    }
+);
 
 
-    /*
-     * Bootstrap dropdown initialization.
-     */
+/*
+|--------------------------------------------------------------------------
+| SKU
+|--------------------------------------------------------------------------
+|
+| Always uppercase.
+|
+*/
 
-    $(document).ready(function () {
+const sku =
+    document.getElementById('SKU');
 
-        $('.dropdown-toggle').dropdown();
 
-    });
+sku.addEventListener(
+    'input',
+    function () {
+
+        this.value =
+            this.value.toUpperCase();
+
+    }
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| BOOTSTRAP DROPDOWNS
+|--------------------------------------------------------------------------
+*/
+
+$(document).ready(function () {
+
+    $('.dropdown-toggle').dropdown();
+
+});
 
 </script>
 
